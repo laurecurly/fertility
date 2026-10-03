@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard FET — Protocole Vitanova</title>
+<style>
+  :root {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    color: #1f2937;
+    background: #f6f7fb;
+    margin: 0;
+  }
+  body { margin: 0; }
+  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  .subtitle { color: #6b7280; margin: 0 0 20px; font-size: .9rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); border: 1px solid #eef0f4;
+  }
+  .card .label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; }
+  .card .value { font-size: 1.15rem; font-weight: 600; margin-top: 4px; }
+  .card .date { font-size: .8rem; color: #6b7280; margin-top: 2px; }
+  .card.next { border: 2px solid #8b5cf6; background: #faf8ff; }
+  .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .badge.a-venir { background: #ede9fe; color: #6d28d9; }
+  .badge.a-faire { background: #fef3c7; color: #b45309; }
+  .badge.ok { background: #d1fae5; color: #047857; }
+  h2 { font-size: 1.05rem; margin: 28px 0 10px; }
+  ul.timeline { list-style: none; padding: 0; margin: 0; position: relative; }
+  ul.timeline::before { content: ""; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: #e5e7eb; }
+  li {
+    position: relative; padding: 10px 0 10px 34px; background: #fff;
+    border: 1px solid #eef0f4; border-radius: 12px; margin-bottom: 8px;
+  }
+  li::before {
+    content: ""; position: absolute; left: 6px; top: 16px; width: 12px; height: 12px;
+    border-radius: 50%; background: #c4b5fd; border: 2px solid #fff; box-shadow: 0 0 0 2px #c4b5fd;
+  }
+  li.past::before { background: #a78bfa; }
+  li.today::before { background: #7c3aed; box-shadow: 0 0 0 3px #ddd6fe; }
+  li .when { font-size: .78rem; color: #7c3aed; font-weight: 600; }
+  li .what { font-weight: 600; margin: 2px 0; }
+  li .detail { font-size: .82rem; color: #6b7280; }
+  .countdown { font-size: 2rem; font-weight: 700; color: #7c3aed; }
+  footer { font-size: .75rem; color: #9ca3af; margin-top: 32px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Dashboard FET <span class="badge a-venir">Cycle naturel — Vitanova</span></h1>
+  <p class="subtitle" id="subtitle">Protocole FET en cycle naturel</p>
+
+  <div class="card" id="next-card" style="margin-bottom:12px;">
+    <div class="label">Prochaine étape</div>
+    <div class="value" id="next-title">—</div>
+    <div class="date" id="next-date">—</div>
+  </div>
+
+  <div class="grid" id="cards"></div>
+
+  <h2>Calendrier du cycle</h2>
+  <ul class="timeline" id="cycle"></ul>
+
+  <h2>Avant le cycle</h2>
+  <ul class="timeline" id="pre"></ul>
+
+  <footer id="footer"></footer>
+</main>
+
+<script>
+  // ── Données ─────────────────────────────────────────────
+  // Copie des données du Google Sheet au 03/10/2026.
+  // Option "live" : publier l'onglet en CSV (Fichier → Partager
+  // → Publier sur le web) et décommenter SHEET_CSV_URL :
+  // la page rechargera alors les données à chaque visite.
+  const SHEET_CSV_URL = null; // ex: "https://docs.google.com/spreadsheets/d/e/…/pub?gid=1190738777&single=true&output=csv"
+
+  const J1 = "2026-11-01";
+  const cycle = [
+    { d: 1,  title: "Début des règles (J1)", detail: "Email à support@vitanova.dk — réponse avec les dates exactes sous 24 h" },
+    { d: 10, title: "Échographie (J10)", detail: "Follicules et endomètre. Si faite en France, envoyer le compte rendu avant 14 h" },
+    { d: 12, title: "Ovitrelle 250 µg à 22 h (J12)", detail: "Si endomètre > 7 mm et follicule ≥ 17 mm. Date confirmée par Vitanova" },
+    { d: 19, title: "Transfert du blastocyste (J19)", detail: "Consentement de décongélation signé avant. Vessie à moitié pleine" },
+    { d: 33, title: "Test urinaire (J33)", detail: "Résultat à communiquer à la clinique" },
+    { d: 33, title: "Prise de sang hCG (si test positif)", detail: "Le jour du test ou le lendemain" },
+    { d: 54, title: "Échographie précoce (si test positif)", detail: "Environ 3 semaines après le test positif" },
+  ];
+  const pre = [
+    { date: "2026-10-11", title: "Treatment Call — ouverture de fenêtre", detail: "Appel avec une sage-femme ou une infirmière" },
+    { date: "2026-10-18", title: "Treatment Call — fin de fenêtre", detail: "Appel avec une sage-femme ou une infirmière" },
+    { date: "2026-11-01", title: "Acheter Ovitrelle et Utrogestan", detail: "Vérifier l'ordonnance danoise avec la pharmacie" },
+    { date: null,        title: "Signer les 2 consentements de traitement", detail: "Dès que possible — date de naissance à la place du CPR" },
+  ];
+
+  // ── Rendu ───────────────────────────────────────────────
+  const fmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
+  const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d; };
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const dayDiff = (a, b) => Math.round((a - b) / 86400000);
+  const cycleDate = (d) => addDays(J1, d - 1);
+
+  const all = [
+    ...cycle.map(e => ({ ...e, date: cycleDate(e.d).toISOString().slice(0, 10), group: "cycle" })),
+    ...pre.map(e => ({ ...e, group: "pre" })),
+  ].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+
+  // Cartes clés
+  const cards = [
+    { label: "J1 — Début des règles", date: J1 },
+    { label: "Échographie (J10)", date: cycleDate(10).toISOString().slice(0,10) },
+    { label: "Ovitrelle (J12)", date: cycleDate(12).toISOString().slice(0,10) },
+    { label: "Transfert (J19)", date: cycleDate(19).toISOString().slice(0,10) },
+    { label: "Test urinaire (J33)", date: cycleDate(33).toISOString().slice(0,10) },
+    { label: "Écho précoce (si +) (J54)", date: cycleDate(54).toISOString().slice(0,10) },
+  ];
+  document.getElementById("cards").innerHTML = cards.map(c => {
+    const d = new Date(c.date + "T12:00:00");
+    const n = dayDiff(d, today);
+    return `<div class="card"><div class="label">${c.label}</div>
+      <div class="value">${fmt.format(d)}</div>
+      <div class="date">${n === 0 ? "aujourd'hui" : n > 0 ? "dans " + n + " j" : "il y a " + (-n) + " j"}</div></div>`;
+  }).join("");
+
+  // Prochaine étape
+  const next = all.find(e => e.date && new Date(e.date + "T12:00:00") >= today);
+  if (next) {
+    document.getElementById("next-title").textContent = next.title;
+    document.getElementById("next-date").textContent = fmt.format(new Date(next.date + "T12:00:00")) +
+      " — dans " + dayDiff(new Date(next.date + "T12:00:00"), today) + " jours";
+  }
+
+  const li = (e) => {
+    const cls = !e.date ? "" : dayDiff(new Date(e.date + "T12:00:00"), today) === 0 ? "today"
+      : new Date(e.date + "T12:00:00") < today ? "past" : "";
+    const when = e.date ? (e.d ? "J" + e.d + " · " : "") + fmt.format(new Date(e.date + "T12:00:00")) : "Dès que possible";
+    return `<li class="${cls}"><div class="when">${when}</div>
+      <div class="what">${e.title}</div>
+      ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
+  };
+  document.getElementById("cycle").innerHTML = all.filter(e => e.group === "cycle").map(li).join("");
+  document.getElementById("pre").innerHTML = all.filter(e => e.group === "pre").map(li).join("");
+  document.getElementById("subtitle").textContent =
+    "J1 : " + fmt.format(new Date(J1 + "T12:00:00")) + " · Aujourd'hui : " + fmt.format(today);
+  document.getElementById("footer").textContent =
+    "Source : Google Sheet « Protocole FET » — données du 03/10/2026.";
+
+  // ── Option live : rechargement depuis le CSV publié ──────
+  // (désactivé en préview ; actif une fois le CSV publié sur le web)
+  if (SHEET_CSV_URL && location.protocol.startsWith("http")) {
+    fetch(SHEET_CSV_URL).then(r => r.text()).then(txt => {
+      const rows = txt.split(/\r?\n/).map(l => l.split(",").map(c => c.replace(/^"|"$/g, "")));
+      // Reparse simple : mets à jour les statuts "À venir / À faire / Fait"
+      document.querySelectorAll("li").forEach(el => {
+        const t = el.querySelector(".what").textContent;
+        for (const row of rows) if (row.includes(t)) {
+          const s = row[row.length - 1];
+          el.insertAdjacentHTML("beforeend", `<span class="badge ${s === "Fait" ? "ok" : s === "À faire" ? "a-faire" : "a-venir"}">${s}</span>`);
+        }
+      });
+    }).catch(() => {});
+  }
+</script>
+</body>
+</html>
