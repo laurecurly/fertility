@@ -23,16 +23,15 @@
   .card .label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; }
   .card .value { font-size: 1.15rem; font-weight: 600; margin-top: 4px; }
   .card .date { font-size: .8rem; color: #6b7280; margin-top: 2px; }
-  .card.next { border: 2px solid #8b5cf6; background: #faf8ff; }
   .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
-  .badge.a-venir { background: #ede9fe; color: #6d28d9; }
-  .badge.a-faire { background: #fef3c7; color: #b45309; }
-  .badge.ok { background: #d1fae5; color: #047857; }
+  .badge.à-venir { background: #ede9fe; color: #6d28d9; }
+  .badge.à-faire { background: #fef3c7; color: #b45309; }
+  .badge.fait { background: #d1fae5; color: #047857; }
   h2 { font-size: 1.05rem; margin: 28px 0 10px; }
   ul.timeline { list-style: none; padding: 0; margin: 0; position: relative; }
   ul.timeline::before { content: ""; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: #e5e7eb; }
   li {
-    position: relative; padding: 10px 0 10px 34px; background: #fff;
+    position: relative; padding: 10px 12px 10px 34px; background: #fff;
     border: 1px solid #eef0f4; border-radius: 12px; margin-bottom: 8px;
   }
   li::before {
@@ -41,17 +40,24 @@
   }
   li.past::before { background: #a78bfa; }
   li.today::before { background: #7c3aed; box-shadow: 0 0 0 3px #ddd6fe; }
+  li.done { opacity: .65; }
   li .when { font-size: .78rem; color: #7c3aed; font-weight: 600; }
-  li .what { font-weight: 600; margin: 2px 0; }
-  li .detail { font-size: .82rem; color: #6b7280; }
-  .countdown { font-size: 2rem; font-weight: 700; color: #7c3aed; }
+  li .what { font-weight: 600; margin: 2px 0; display: inline; }
+  li .detail { font-size: .82rem; color: #6b7280; margin-top: 2px; }
+  .status { font-size: .7rem; padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
+  .status.à-venir { background: #ede9fe; color: #6d28d9; }
+  .status.à-faire { background: #fef3c7; color: #b45309; }
+  .status.fait { background: #d1fae5; color: #047857; }
+  .live { font-size: .72rem; color: #9ca3af; margin-left: 8px; }
+  .live.ok { color: #047857; }
+  .live.ko { color: #b45309; }
   footer { font-size: .75rem; color: #9ca3af; margin-top: 32px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Dashboard FET <span class="badge a-venir">Cycle naturel — Vitanova</span></h1>
-  <p class="subtitle" id="subtitle">Protocole FET en cycle naturel</p>
+  <h1>Dashboard FET <span class="badge à-venir">Cycle naturel — Vitanova</span></h1>
+  <p class="subtitle"><span id="subtitle">Protocole FET en cycle naturel</span><span class="live" id="live-indicator"></span></p>
 
   <div class="card" id="next-card" style="margin-bottom:12px;">
     <div class="label">Prochaine étape</div>
@@ -71,97 +77,178 @@
 </main>
 
 <script>
-  // ── Données ─────────────────────────────────────────────
-  // Copie des données du Google Sheet au 03/10/2026.
-  // Option "live" : publier l'onglet en CSV (Fichier → Partager
-  // → Publier sur le web) et décommenter SHEET_CSV_URL :
-  // la page rechargera alors les données à chaque visite.
-  const SHEET_CSV_URL = null; // ex: "https://docs.google.com/spreadsheets/d/e/…/pub?gid=1190738777&single=true&output=csv"
+  // ── Source des données ──────────────────────────────────
+  // 1) Dans Google Sheets : Fichier → Partager → Publier sur le web
+  //    → sélectionner l'onglet du cycle → format "Valeurs séparées par des virgules (.csv)"
+  //    → Publier, puis copier l'URL ici :
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtuTGAxUF1LrASHyVpL1JkgClU4JGz5PwLRcCgwDQVmNpY8EN1QlMjTXeX1lA5NAlhgDQ1KRHSKT19/pub?gid=1190738777&single=true&output=csv";
+  // 2) Si SHEET_CSV_URL est null, si le fetch échoue ou en aperçu local,
+  //    le dashboard utilise les données intégrées ci-dessous (dernier état connu).
 
-  const J1 = "2026-11-01";
-  const cycle = [
-    { d: 1,  title: "Début des règles (J1)", detail: "Email à support@vitanova.dk — réponse avec les dates exactes sous 24 h" },
-    { d: 10, title: "Échographie (J10)", detail: "Follicules et endomètre. Si faite en France, envoyer le compte rendu avant 14 h" },
-    { d: 12, title: "Ovitrelle 250 µg à 22 h (J12)", detail: "Si endomètre > 7 mm et follicule ≥ 17 mm. Date confirmée par Vitanova" },
-    { d: 19, title: "Transfert du blastocyste (J19)", detail: "Consentement de décongélation signé avant. Vessie à moitié pleine" },
-    { d: 33, title: "Test urinaire (J33)", detail: "Résultat à communiquer à la clinique" },
-    { d: 33, title: "Prise de sang hCG (si test positif)", detail: "Le jour du test ou le lendemain" },
-    { d: 54, title: "Échographie précoce (si test positif)", detail: "Environ 3 semaines après le test positif" },
-  ];
-  const pre = [
-    { date: "2026-10-11", title: "Treatment Call — ouverture de fenêtre", detail: "Appel avec une sage-femme ou une infirmière" },
-    { date: "2026-10-18", title: "Treatment Call — fin de fenêtre", detail: "Appel avec une sage-femme ou une infirmière" },
-    { date: "2026-11-01", title: "Acheter Ovitrelle et Utrogestan", detail: "Vérifier l'ordonnance danoise avec la pharmacie" },
-    { date: null,        title: "Signer les 2 consentements de traitement", detail: "Dès que possible — date de naissance à la place du CPR" },
-  ];
+  // ── Données de secours (dernier état du sheet au 03/10/2026) ──
+  const FALLBACK = {
+    j1: "2026-11-01",
+    cycle: [
+      { title: "Début des règles (J1)", day: 1, detail: "Email à support@vitanova.dk — réponse avec les dates exactes sous 24 h", status: "À venir" },
+      { title: "Échographie (J10)", day: 10, detail: "Follicules et endomètre. Si faite en France, envoyer le compte rendu avant 14 h", status: "À venir" },
+      { title: "Ovitrelle 250 µg à 22 h (J12)", day: 12, detail: "Si endomètre > 7 mm et follicule ≥ 17 mm. Date confirmée par Vitanova", status: "À venir" },
+      { title: "Transfert du blastocyste (J19)", day: 19, detail: "Consentement de décongélation signé avant. Vessie à moitié pleine", status: "À venir" },
+      { title: "Test urinaire (J33)", day: 33, detail: "Résultat à communiquer à la clinique", status: "À venir" },
+      { title: "Prise de sang hCG (si test positif)", day: 33, detail: "Le jour du test ou le lendemain", status: "À venir" },
+      { title: "Échographie précoce (si test positif)", day: 54, detail: "Environ 3 semaines après le test positif", status: "À venir" },
+    ],
+    pre: [
+      { title: "Treatment Call — ouverture de fenêtre", date: "2026-10-11", detail: "Appel avec une sage-femme ou une infirmière", status: "À faire" },
+      { title: "Treatment Call — fin de fenêtre", date: "2026-10-18", detail: "Appel avec une sage-femme ou une infirmière", status: "À faire" },
+      { title: "Acheter Ovitrelle et Utrogestan", date: "2026-11-01", detail: "Vérifier l'ordonnance danoise avec la pharmacie", status: "À faire" },
+      { title: "Signer les 2 consentements de traitement", date: null, detail: "Dès que possible — date de naissance à la place du CPR", status: "À faire" },
+    ],
+  };
+
+  // ── Parsing du CSV publié ───────────────────────────────
+  function parseCsv(text) {
+    const rows = []; let row = [], field = "", inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else inQuotes = false; }
+        else field += c;
+      } else if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c !== "\r") field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.some(c => c.trim() !== ""));
+  }
+
+  // "01/11/2026" → "2026-11-01" ; tolère aussi "2026-11-01" ou "19/11/2026 14:30"
+  function toIso(v) {
+    if (!v) return null;
+    const m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    const m2 = v.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m2) return m2[0];
+    return null;
+  }
+
+  function parseSheet(rows) {
+    const data = { j1: null, cycle: [], pre: [] };
+    let section = null;
+    for (const r of rows) {
+      const c = (i) => (r[i] || "").trim();
+      if (c(0).startsWith("Date de J1")) { data.j1 = toIso(c(1)); continue; }
+      if (c(0) === "Calendrier du cycle") { section = "cycle"; continue; }
+      if (c(0) === "Avant le cycle") { section = "pre"; continue; }
+      if (!c(0) || c(0).startsWith("Entrées") || c(0).startsWith("Protocole")) continue;
+      if (section === "cycle") {
+        const day = /^\d+$/.test(c(1)) ? parseInt(c(1), 10) : null;
+        data.cycle.push({ title: c(0), day, date: toIso(c(2)), detail: c(3), status: c(4) || "À venir" });
+      } else if (section === "pre") {
+        data.pre.push({ title: c(0), date: toIso(c(1)), rawWhen: c(1) && !toIso(c(1)) ? c(1) : null, detail: c(3), status: c(4) || "À faire" });
+      }
+    }
+    return data;
+  }
 
   // ── Rendu ───────────────────────────────────────────────
   const fmt = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
   const addDays = (iso, n) => { const d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d; };
   const today = new Date(); today.setHours(12, 0, 0, 0);
   const dayDiff = (a, b) => Math.round((a - b) / 86400000);
-  const cycleDate = (d) => addDays(J1, d - 1);
 
-  const all = [
-    ...cycle.map(e => ({ ...e, date: cycleDate(e.d).toISOString().slice(0, 10), group: "cycle" })),
-    ...pre.map(e => ({ ...e, group: "pre" })),
-  ].sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
-
-  // Cartes clés
-  const cards = [
-    { label: "J1 — Début des règles", date: J1 },
-    { label: "Échographie (J10)", date: cycleDate(10).toISOString().slice(0,10) },
-    { label: "Ovitrelle (J12)", date: cycleDate(12).toISOString().slice(0,10) },
-    { label: "Transfert (J19)", date: cycleDate(19).toISOString().slice(0,10) },
-    { label: "Test urinaire (J33)", date: cycleDate(33).toISOString().slice(0,10) },
-    { label: "Écho précoce (si +) (J54)", date: cycleDate(54).toISOString().slice(0,10) },
-  ];
-  document.getElementById("cards").innerHTML = cards.map(c => {
-    const d = new Date(c.date + "T12:00:00");
-    const n = dayDiff(d, today);
-    return `<div class="card"><div class="label">${c.label}</div>
-      <div class="value">${fmt.format(d)}</div>
-      <div class="date">${n === 0 ? "aujourd'hui" : n > 0 ? "dans " + n + " j" : "il y a " + (-n) + " j"}</div></div>`;
-  }).join("");
-
-  // Prochaine étape
-  const next = all.find(e => e.date && new Date(e.date + "T12:00:00") >= today);
-  if (next) {
-    document.getElementById("next-title").textContent = next.title;
-    document.getElementById("next-date").textContent = fmt.format(new Date(next.date + "T12:00:00")) +
-      " — dans " + dayDiff(new Date(next.date + "T12:00:00"), today) + " jours";
+  function normalize(data) {
+    const items = [
+      ...data.cycle.map(e => ({
+        ...e,
+        iso: e.date || (e.day && data.j1 ? addDays(data.j1, e.day - 1).toISOString().slice(0, 10) : null),
+        group: "cycle",
+      })),
+      ...data.pre.map(e => ({ ...e, iso: e.date || null, group: "pre" })),
+    ];
+    items.forEach(e => { e.moment = e.iso ? new Date(e.iso + "T12:00:00") : null; });
+    items.sort((a, b) => (a.iso || "9999").localeCompare(b.iso || "9999"));
+    return items;
   }
 
-  const li = (e) => {
-    const cls = !e.date ? "" : dayDiff(new Date(e.date + "T12:00:00"), today) === 0 ? "today"
-      : new Date(e.date + "T12:00:00") < today ? "past" : "";
-    const when = e.date ? (e.d ? "J" + e.d + " · " : "") + fmt.format(new Date(e.date + "T12:00:00")) : "Dès que possible";
-    return `<li class="${cls}"><div class="when">${when}</div>
-      <div class="what">${e.title}</div>
-      ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
-  };
-  document.getElementById("cycle").innerHTML = all.filter(e => e.group === "cycle").map(li).join("");
-  document.getElementById("pre").innerHTML = all.filter(e => e.group === "pre").map(li).join("");
-  document.getElementById("subtitle").textContent =
-    "J1 : " + fmt.format(new Date(J1 + "T12:00:00")) + " · Aujourd'hui : " + fmt.format(today);
-  document.getElementById("footer").textContent =
-    "Source : Google Sheet « Protocole FET » — données du 03/10/2026.";
+  function render(data, live) {
+    document.getElementById("live-indicator").textContent = live ? "· données en direct (Google Sheet)" : "· données figées du 03/10/2026";
+    document.getElementById("live-indicator").className = "live " + (live ? "ok" : "ko");
 
-  // ── Option live : rechargement depuis le CSV publié ──────
-  // (désactivé en préview ; actif une fois le CSV publié sur le web)
-  if (SHEET_CSV_URL && location.protocol.startsWith("http")) {
-    fetch(SHEET_CSV_URL).then(r => r.text()).then(txt => {
-      const rows = txt.split(/\r?\n/).map(l => l.split(",").map(c => c.replace(/^"|"$/g, "")));
-      // Reparse simple : mets à jour les statuts "À venir / À faire / Fait"
-      document.querySelectorAll("li").forEach(el => {
-        const t = el.querySelector(".what").textContent;
-        for (const row of rows) if (row.includes(t)) {
-          const s = row[row.length - 1];
-          el.insertAdjacentHTML("beforeend", `<span class="badge ${s === "Fait" ? "ok" : s === "À faire" ? "a-faire" : "a-venir"}">${s}</span>`);
-        }
-      });
-    }).catch(() => {});
+    document.getElementById("subtitle").textContent =
+      "J1 : " + (data.j1 ? fmt.format(new Date(data.j1 + "T12:00:00")) : "—") + " · Aujourd'hui : " + fmt.format(today);
+
+    const items = normalize(data);
+
+    // Cartes clés (jalons principaux)
+    const keys = [
+      { match: /règles/i, label: "J1 — Début des règles" },
+      { match: /échographie$/i, label: "Échographie (J10)" },
+      { match: /ovitrelle/i, label: "Ovitrelle (J12)" },
+      { match: /transfert/i, label: "Transfert (J19)" },
+      { match: /test urinaire/i, label: "Test urinaire (J33)" },
+      { match: /précoce/i, label: "Écho précoce (si +)" },
+    ];
+    const cards = keys.map(k => {
+      const e = items.find(i => i.group === "cycle" && k.match.test(i.title));
+      return e && e.moment ? { label: k.label, moment: e.moment } : null;
+    }).filter(Boolean);
+    document.getElementById("cards").innerHTML = cards.map(c => {
+      const n = dayDiff(c.moment, today);
+      return `<div class="card"><div class="label">${c.label}</div>
+        <div class="value">${fmt.format(c.moment)}</div>
+        <div class="date">${n === 0 ? "aujourd'hui" : n > 0 ? "dans " + n + " j" : "il y a " + (-n) + " j"}</div></div>`;
+    }).join("");
+
+    // Prochaine étape (premier élément non "Fait" à venir)
+    const next = items.find(e => e.moment && e.moment >= today && e.status !== "Fait");
+    if (next) {
+      document.getElementById("next-title").textContent = next.title;
+      document.getElementById("next-date").textContent = fmt.format(next.moment) +
+        " — dans " + dayDiff(next.moment, today) + " jours";
+    } else {
+      document.getElementById("next-title").textContent = "Aucune étape à venir 🎉";
+      document.getElementById("next-date").textContent = "";
+    }
+
+    // Timelines
+    const statusBadge = (s) => {
+      const cls = s === "Fait" ? "fait" : s === "À faire" ? "à-faire" : "à-venir";
+      return `<span class="status ${cls}">${s}</span>`;
+    };
+    const li = (e) => {
+      const isDone = e.status === "Fait";
+      const cls = isDone ? "done" : !e.moment ? "" : dayDiff(e.moment, today) === 0 ? "today" : e.moment < today ? "past" : "";
+      const when = e.group === "cycle"
+        ? (e.day ? "J" + e.day + " · " : "") + (e.moment ? fmt.format(e.moment) : "À confirmer")
+        : (e.moment ? fmt.format(e.moment) : e.rawWhen || "Dès que possible");
+      return `<li class="${cls}"><div class="when">${when}</div>
+        <div class="what">${e.title}</div>${statusBadge(e.status)}
+        ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
+    };
+    document.getElementById("cycle").innerHTML = items.filter(e => e.group === "cycle").map(li).join("");
+    document.getElementById("pre").innerHTML = items.filter(e => e.group === "pre").map(li).join("");
+    document.getElementById("footer").textContent =
+      live ? "Source : Google Sheet « Protocole FET » (publié en CSV) — rechargé à chaque visite."
+           : "Source : Google Sheet « Protocole FET » — données du 03/10/2026. Publiez l'onglet en CSV et renseignez SHEET_CSV_URL pour le mode en direct.";
   }
+
+  // ── Chargement : CSV live si dispo, sinon secours ────────
+  async function main() {
+    if (SHEET_CSV_URL && location.protocol.startsWith("http")) {
+      try {
+        const res = await fetch(SHEET_CSV_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error(res.status);
+        const data = parseSheet(parseCsv(await res.text()));
+        if (data.j1 && data.cycle.length) return render(data, true);
+        throw new Error("sheet incomplet");
+      } catch (e) {
+        console.warn("Lecture du sheet impossible, données figées :", e);
+      }
+    }
+    render(FALLBACK, false);
+  }
+  main();
 </script>
 </body>
 </html>
