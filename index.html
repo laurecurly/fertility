@@ -3,63 +3,96 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard FET — Protocole Vitanova</title>
+<title>Projet BB — Protocole Vitanova</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    font-family: Inter, system-ui, -apple-system, sans-serif;
-    color: #1f2937;
-    background: #f6f7fb;
-    margin: 0;
+    --green: #22c55e;
+    --green-soft: #dcfce7;
+    --ink: #000000;
+    --paper: #ffffff;
+    --muted: #555555;
+    --border: 2px solid #000;
+    font-family: 'IBM Plex Sans', 'Space Grotesk', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
   }
-  body { margin: 0; }
-  main { max-width: 880px; margin: 0 auto; padding: 24px 16px 48px; }
-  h1 { font-size: 1.5rem; margin: 0 0 4px; }
-  .subtitle { color: #6b7280; margin: 0 0 20px; font-size: .9rem; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 24px; }
-  .card {
-    background: #fff; border-radius: 14px; padding: 16px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06); border: 1px solid #eef0f4;
-  }
-  .card .label { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; }
-  .card .value { font-size: 1.15rem; font-weight: 600; margin-top: 4px; }
-  .card .date { font-size: .8rem; color: #6b7280; margin-top: 2px; }
-  .badge { display: inline-block; font-size: .7rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
-  .badge.à-venir { background: #ede9fe; color: #6d28d9; }
-  .badge.à-faire { background: #fef3c7; color: #b45309; }
-  .badge.fait { background: #d1fae5; color: #047857; }
-  h2 { font-size: 1.05rem; margin: 28px 0 10px; }
-  ul.timeline { list-style: none; padding: 0; margin: 0; position: relative; }
-  ul.timeline::before { content: ""; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: #e5e7eb; }
-  li {
-    position: relative; padding: 10px 12px 10px 34px; background: #fff;
-    border: 1px solid #eef0f4; border-radius: 12px; margin-bottom: 8px;
-  }
-  li::before {
-    content: ""; position: absolute; left: 6px; top: 16px; width: 12px; height: 12px;
-    border-radius: 50%; background: #c4b5fd; border: 2px solid #fff; box-shadow: 0 0 0 2px #c4b5fd;
-  }
-  li.past::before { background: #a78bfa; }
-  li.today::before { background: #7c3aed; box-shadow: 0 0 0 3px #ddd6fe; }
-  li.done { opacity: .65; }
-  li .when { font-size: .78rem; color: #7c3aed; font-weight: 600; }
-  li .what { font-weight: 600; margin: 2px 0; display: inline; }
-  li .detail { font-size: .82rem; color: #6b7280; margin-top: 2px; }
-  .status { font-size: .7rem; padding: 2px 8px; border-radius: 999px; margin-left: 4px; }
-  .status.à-venir { background: #ede9fe; color: #6d28d9; }
-  .status.à-faire { background: #fef3c7; color: #b45309; }
-  .status.fait { background: #d1fae5; color: #047857; }
-  .live { font-size: .72rem; color: #9ca3af; margin-left: 8px; }
-  .live.ok { color: #047857; }
+  body { margin: 0; background: var(--paper); }
+  main { max-width: 940px; margin: 0 auto; padding: 32px 20px 64px; }
+
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 2.6rem; font-weight: 700; margin: 0 0 6px; letter-spacing: -.02em; text-transform: uppercase; }
+  .subtitle { color: var(--muted); margin: 0 0 4px; font-size: .9rem; font-weight: 500; }
+  .badge { display: inline-block; font-family: 'Space Grotesk', sans-serif; font-size: .72rem; font-weight: 700; padding: 3px 12px; border: var(--border); margin-left: 10px; vertical-align: middle; text-transform: uppercase; letter-spacing: .04em; background: var(--green-soft); }
+  .live { font-family: 'Space Grotesk', sans-serif; font-size: .72rem; font-weight: 700; margin-left: 8px; text-transform: uppercase; letter-spacing: .04em; }
+  .live.ok { color: #15803d; }
   .live.ko { color: #b45309; }
-  footer { font-size: .75rem; color: #9ca3af; margin-top: 32px; }
+  .rule { height: 4px; background: var(--green); margin: 18px 0 26px; }
+
+  /* ── Frise temporelle ── */
+  .frise-card { border: var(--border); background: var(--paper); padding: 24px 20px 14px; margin: 0 0 22px; }
+  .frise { position: relative; height: 88px; }
+  .frise .track { position: absolute; left: 0; right: 0; top: 38px; height: 8px; background: #000; }
+  .frise .fill { position: absolute; left: 0; top: 38px; height: 8px; background: var(--green); }
+  .frise .today-line { position: absolute; top: 24px; width: 3px; height: 36px; background: #000; }
+  .frise .today-label { position: absolute; top: -2px; transform: translateX(-50%); font-family: 'Space Grotesk', sans-serif; font-size: .66rem; font-weight: 700; color: #fff;
+    background: #000; padding: 2px 8px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  .ms { position: absolute; top: 0; transform: translateX(-50%); text-align: center; width: 90px; }
+  .ms .dot { width: 14px; height: 14px; margin: 31px auto 7px; background: var(--paper); border: 2px solid #000; box-sizing: border-box; }
+  .ms.done .dot { background: var(--green); }
+  .ms.test .dot { border-color: #000; background: var(--ink); }
+  .ms .lbl { font-family: 'Space Grotesk', sans-serif; font-size: .68rem; font-weight: 700; line-height: 1.15; text-transform: uppercase; letter-spacing: .02em; }
+  .ms .day { font-size: .64rem; font-weight: 600; color: var(--green); font-family: 'Space Grotesk', sans-serif; }
+  .ms .day.done { color: #15803d; }
+
+  /* ── Prochaine étape (carte pleine largeur) ── */
+  .hero { border: var(--border); background: var(--ink); color: #fff; padding: 20px 22px; margin-bottom: 16px; }
+  .hero .label { font-family: 'Space Grotesk', sans-serif; font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; color: var(--green); }
+  .hero .value { font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 700; margin-top: 6px; }
+  .hero .date { font-size: .88rem; font-weight: 500; margin-top: 4px; color: #d4d4d4; }
+
+  /* ── Grille de cartes ── */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 30px; }
+  .card { border: var(--border); background: var(--paper); padding: 16px 18px; }
+  .card .num { font-family: 'Space Grotesk', sans-serif; font-size: .8rem; font-weight: 700; color: var(--green); }
+  .card .label { font-family: 'Space Grotesk', sans-serif; font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; margin-top: 6px; }
+  .card .value { font-size: 1rem; font-weight: 700; margin-top: 6px; }
+  .card .date { font-size: .78rem; font-weight: 600; margin-top: 3px; color: var(--muted); }
+
+  /* ── Sections ── */
+  h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 700; margin: 34px 0 4px; text-transform: uppercase; letter-spacing: .01em; }
+  .h2-rule { height: 3px; background: var(--green); width: 64px; margin: 0 0 16px; }
+
+  ul.timeline { list-style: none; padding: 0; margin: 0; }
+  li { border: var(--border); background: var(--paper); padding: 13px 16px 13px 18px; margin-bottom: 10px; position: relative; }
+  li.today { background: var(--green-soft); }
+  li.done { opacity: .55; }
+  li .when { font-family: 'Space Grotesk', sans-serif; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  li .num { font-family: 'Space Grotesk', sans-serif; color: var(--green); font-weight: 700; margin-right: 6px; }
+  li .what { font-weight: 700; display: inline; }
+  li .detail { font-size: .84rem; font-weight: 400; color: var(--muted); margin-top: 3px; }
+  .status { font-family: 'Space Grotesk', sans-serif; font-size: .66rem; font-weight: 700; padding: 2px 8px; border: 1.5px solid #000; margin-left: 8px; vertical-align: middle; text-transform: uppercase; letter-spacing: .03em; }
+  .status.à-venir { background: var(--paper); }
+  .status.à-faire { background: #fef9c3; }
+  .status.fait { background: var(--green); color: #fff; border-color: #000; }
+  footer { font-size: .74rem; font-weight: 500; color: var(--muted); margin-top: 40px; border-top: 2px solid #000; padding-top: 10px; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Dashboard FET <span class="badge à-venir">Cycle naturel — Vitanova</span></h1>
+  <h1>Projet BB <span class="badge">Cycle naturel — Vitanova</span></h1>
   <p class="subtitle"><span id="subtitle">Protocole FET en cycle naturel</span><span class="live" id="live-indicator"></span></p>
+  <div class="rule"></div>
 
-  <div class="card" id="next-card" style="margin-bottom:12px;">
+  <div class="frise-card">
+    <div class="frise" id="frise">
+      <div class="track"></div>
+      <div class="fill" id="frise-fill"></div>
+    </div>
+  </div>
+
+  <div class="hero" id="next-card">
     <div class="label">Prochaine étape</div>
     <div class="value" id="next-title">—</div>
     <div class="date" id="next-date">—</div>
@@ -68,9 +101,11 @@
   <div class="grid" id="cards"></div>
 
   <h2>Calendrier du cycle</h2>
+  <div class="h2-rule"></div>
   <ul class="timeline" id="cycle"></ul>
 
   <h2>Avant le cycle</h2>
+  <div class="h2-rule"></div>
   <ul class="timeline" id="pre"></ul>
 
   <footer id="footer"></footer>
@@ -78,12 +113,7 @@
 
 <script>
   // ── Source des données ──────────────────────────────────
-  // 1) Dans Google Sheets : Fichier → Partager → Publier sur le web
-  //    → sélectionner l'onglet du cycle → format "Valeurs séparées par des virgules (.csv)"
-  //    → Publier, puis copier l'URL ici :
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtuTGAxUF1LrASHyVpL1JkgClU4JGz5PwLRcCgwDQVmNpY8EN1QlMjTXeX1lA5NAlhgDQ1KRHSKT19/pub?gid=1190738777&single=true&output=csv";
-  // 2) Si SHEET_CSV_URL est null, si le fetch échoue ou en aperçu local,
-  //    le dashboard utilise les données intégrées ci-dessous (dernier état connu).
 
   // ── Données de secours (dernier état du sheet au 03/10/2026) ──
   const FALLBACK = {
@@ -122,7 +152,6 @@
     return rows.filter(r => r.some(c => c.trim() !== ""));
   }
 
-  // "01/11/2026" → "2026-11-01" ; tolère aussi "2026-11-01" ou "19/11/2026 14:30"
   function toIso(v) {
     if (!v) return null;
     const m = v.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -180,34 +209,40 @@
 
     const items = normalize(data);
 
-    // Cartes clés (jalons principaux)
+    // ── Frise temporelle ──
+    renderFrise(data, items);
+
+    // Cartes clés (numérotées 01–06 comme dans la maquette)
     const keys = [
-      { match: /règles/i, label: "J1 — Début des règles" },
-      { match: /échographie$/i, label: "Échographie (J10)" },
-      { match: /ovitrelle/i, label: "Ovitrelle (J12)" },
-      { match: /transfert/i, label: "Transfert (J19)" },
-      { match: /test urinaire/i, label: "Test urinaire (J33)" },
-      { match: /précoce/i, label: "Écho précoce (si +)" },
+      { match: /règles/i, label: "Début des règles" },
+      { match: /échographie$/i, label: "Échographie" },
+      { match: /ovitrelle/i, label: "Ovitrelle" },
+      { match: /transfert/i, label: "Transfert" },
+      { match: /test urinaire/i, label: "Test urinaire" },
+      { match: /précoce/i, label: "Écho précoce" },
     ];
+    let cardNum = 0;
     const cards = keys.map(k => {
       const e = items.find(i => i.group === "cycle" && k.match.test(i.title));
-      return e && e.moment ? { label: k.label, moment: e.moment } : null;
+      cardNum++;
+      return e && e.moment ? { num: String(cardNum).padStart(2, "0"), label: k.label, moment: e.moment, day: e.day } : null;
     }).filter(Boolean);
     document.getElementById("cards").innerHTML = cards.map(c => {
       const n = dayDiff(c.moment, today);
-      return `<div class="card"><div class="label">${c.label}</div>
+      return `<div class="card"><div class="num">${c.num}${c.day ? " — J" + c.day : ""}</div>
+        <div class="label">${c.label}</div>
         <div class="value">${fmt.format(c.moment)}</div>
         <div class="date">${n === 0 ? "aujourd'hui" : n > 0 ? "dans " + n + " j" : "il y a " + (-n) + " j"}</div></div>`;
     }).join("");
 
-    // Prochaine étape (premier élément non "Fait" à venir)
+    // Prochaine étape
     const next = items.find(e => e.moment && e.moment >= today && e.status !== "Fait");
     if (next) {
       document.getElementById("next-title").textContent = next.title;
       document.getElementById("next-date").textContent = fmt.format(next.moment) +
         " — dans " + dayDiff(next.moment, today) + " jours";
     } else {
-      document.getElementById("next-title").textContent = "Aucune étape à venir 🎉";
+      document.getElementById("next-title").textContent = "Aucune étape à venir";
       document.getElementById("next-date").textContent = "";
     }
 
@@ -216,13 +251,15 @@
       const cls = s === "Fait" ? "fait" : s === "À faire" ? "à-faire" : "à-venir";
       return `<span class="status ${cls}">${s}</span>`;
     };
+    let cycNum = 0, preNum = 0;
     const li = (e) => {
       const isDone = e.status === "Fait";
-      const cls = isDone ? "done" : !e.moment ? "" : dayDiff(e.moment, today) === 0 ? "today" : e.moment < today ? "past" : "";
+      const cls = isDone ? "done" : !e.moment ? "" : dayDiff(e.moment, today) === 0 ? "today" : "";
+      const num = e.group === "cycle" ? String(++cycNum).padStart(2, "0") : String(++preNum).padStart(2, "0");
       const when = e.group === "cycle"
         ? (e.day ? "J" + e.day + " · " : "") + (e.moment ? fmt.format(e.moment) : "À confirmer")
         : (e.moment ? fmt.format(e.moment) : e.rawWhen || "Dès que possible");
-      return `<li class="${cls}"><div class="when">${when}</div>
+      return `<li class="${cls}"><div class="when"><span class="num">${num}</span>${when}</div>
         <div class="what">${e.title}</div>${statusBadge(e.status)}
         ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
     };
@@ -230,7 +267,50 @@
     document.getElementById("pre").innerHTML = items.filter(e => e.group === "pre").map(li).join("");
     document.getElementById("footer").textContent =
       live ? "Source : Google Sheet « Protocole FET » (publié en CSV) — rechargé à chaque visite."
-           : "Source : Google Sheet « Protocole FET » — données du 03/10/2026. Publiez l'onglet en CSV et renseignez SHEET_CSV_URL pour le mode en direct.";
+           : "Source : Google Sheet « Protocole FET » — données du 03/10/2026.";
+  }
+
+  // ── Frise temporelle ──
+  function renderFrise(data, items) {
+    const frise = document.getElementById("frise");
+    const fill = document.getElementById("frise-fill");
+    if (!data.j1) { frise.parentElement.style.display = "none"; return; }
+
+    const j1 = new Date(data.j1 + "T12:00:00");
+    const D_MAX = 56;
+    const pct = (d) => Math.min(100, Math.max(0, ((d - 1) / (D_MAX - 1)) * 100));
+
+    const milestones = [
+      { match: /règles/i, lbl: "Règles", cls: "" },
+      { match: /échographie$/i, lbl: "Écho", cls: "" },
+      { match: /ovitrelle/i, lbl: "Ovitrelle", cls: "" },
+      { match: /transfert/i, lbl: "Transfert", cls: "test" },
+      { match: /test urinaire/i, lbl: "Test", cls: "test" },
+      { match: /précoce/i, lbl: "Écho précoce", cls: "" },
+    ].map(m => {
+      const e = items.find(i => i.group === "cycle" && m.match.test(i.title));
+      if (!e || !e.day) return null;
+      return { ...m, day: e.day, done: e.status === "Fait", past: e.moment && e.moment < today };
+    }).filter(Boolean);
+
+    let html = "";
+    for (const ms of milestones) {
+      const p = pct(ms.day);
+      html += `<div class="ms ${ms.cls} ${ms.done ? "done" : ""}" style="left:${p}%">
+        <div class="dot"></div><div class="lbl">${ms.lbl}</div><div class="day ${ms.done ? "done" : ""}">J${ms.day}</div></div>`;
+    }
+    const todayDay = dayDiff(today, j1) + 1;
+    if (todayDay >= 1 && todayDay <= D_MAX) {
+      const p = pct(todayDay);
+      html += `<div class="today-line" style="left:${p}%"></div>
+        <div class="today-label" style="left:${p}%">Aujourd'hui · J${todayDay}</div>`;
+      fill.style.width = p + "%";
+    } else if (todayDay < 1) {
+      fill.style.width = "0%";
+    } else {
+      fill.style.width = "100%";
+    }
+    frise.insertAdjacentHTML("beforeend", html);
   }
 
   // ── Chargement : CSV live si dispo, sinon secours ────────
