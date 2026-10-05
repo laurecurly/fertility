@@ -263,6 +263,13 @@
     }
   }
 
+  document.addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".toggle");
+    if (!btn) return;
+    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
+    if (item) flipStatus(item);
+  });
+
   function normalize(data) {
     const items = [
       ...data.cycle.map(e => ({
@@ -412,6 +419,6 @@
   }
   main();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="HTtUE1mmEudrxAMlrCaDOA==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="hzVwTVi5DzG3MhAshMbLaA==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
