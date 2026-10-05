@@ -76,6 +76,11 @@
   .status.à-venir { background: var(--paper); }
   .status.à-faire { background: #fef9c3; }
   .status.fait { background: var(--green); color: #fff; border-color: #000; }
+  .toggle { font-family: 'Space Grotesk', sans-serif; font-size: .66rem; font-weight: 700; padding: 3px 10px;
+    border: 1.5px solid #000; background: #fff; cursor: pointer; margin-left: 8px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: .03em; }
+  .toggle:hover { background: var(--green); color: #fff; }
+  .sync-warn { font-size: .7rem; font-weight: 600; color: #b45309; margin-top: 4px; display: none; }
   footer { font-size: .74rem; font-weight: 500; color: var(--muted); margin-top: 40px; border-top: 2px solid #000; padding-top: 10px; }
 </style>
 </head>
@@ -96,6 +101,7 @@
     <div class="label">Prochaine étape</div>
     <div class="value" id="next-title">—</div>
     <div class="date" id="next-date">—</div>
+    <div class="sync-warn" id="sync-warn">⚠ Modifications en attente de synchronisation — elles seront envoyées au prochain chargement de la page.</div>
   </div>
 
   <div class="grid" id="cards"></div>
@@ -114,6 +120,8 @@
 <script>
   // ── Source des données ──────────────────────────────────
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtuTGAxUF1LrASHyVpL1JkgClU4JGz5PwLRcCgwDQVmNpY8EN1QlMjTXeX1lA5NAlhgDQ1KRHSKT19/pub?gid=1190738777&single=true&output=csv";
+  // URL de l'application web Apps Script (donnée à l'étape 2 des instructions) :
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdCD2MluGhP3W_3Di4Natkd7Kwjjqrdp8DIovfuW-fmDVhQg97vI2pKX1lrxW16oQsWw/exec";
 
   // ── Données de secours (dernier état du sheet au 03/10/2026) ──
   const FALLBACK = {
@@ -186,6 +194,70 @@
   const today = new Date(); today.setHours(12, 0, 0, 0);
   const dayDiff = (a, b) => Math.round((a - b) / 86400000);
 
+  // Globals pour l'interactivité
+  let DATA = null, ITEMS = [], LIVE = false;
+
+  // ── Envoi des statuts vers le Google Sheet ──────────────
+  const PENDING_KEY = "projetbb-pending";
+
+  function getPending() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY) || "[]"); } catch { return []; }
+  }
+  function savePending(p) {
+    const list = getPending().filter(x => x.title !== p.title);
+    list.push(p);
+    localStorage.setItem(PENDING_KEY, JSON.stringify(list));
+    updateSyncWarn();
+  }
+  function clearPending(p) {
+    localStorage.setItem(PENDING_KEY, JSON.stringify(getPending().filter(x => x.title !== p.title)));
+    updateSyncWarn();
+  }
+  function updateSyncWarn() {
+    const el = document.getElementById("sync-warn");
+    if (el) el.style.display = getPending().length ? "block" : "none";
+  }
+
+  function sendToSheet(p) {
+    return fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(p),
+    });
+  }
+
+  function flipStatus(item) {
+    const wasDone = item.status === "Fait";
+    if (!wasDone) item.undoStatus = item.status;
+    const newStatus = wasDone ? (item.undoStatus || "À faire") : "Fait";
+    item.status = newStatus;
+    render(DATA, LIVE);
+    const payload = { title: item.title, status: newStatus };
+    if (APPS_SCRIPT_URL) {
+      savePending(payload);
+      sendToSheet(payload)
+        .then(() => clearPending(payload))
+        .catch(() => { /* reste en file d'attente, sera retenté */ });
+    } else {
+      savePending(payload); // sans script : garde-fou local
+    }
+  }
+
+  async function flushPending() {
+    if (!APPS_SCRIPT_URL) return;
+    for (const p of getPending()) {
+      try { await sendToSheet(p); clearPending(p); } catch { break; }
+    }
+  }
+
+  document.addEventListener("click", (ev) => {
+    const btn = ev.target.closest(".toggle");
+    if (!btn) return;
+    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
+    if (item) flipStatus(item);
+  });
+
   function normalize(data) {
     const items = [
       ...data.cycle.map(e => ({
@@ -195,12 +267,13 @@
       })),
       ...data.pre.map(e => ({ ...e, iso: e.date || null, group: "pre" })),
     ];
-    items.forEach(e => { e.moment = e.iso ? new Date(e.iso + "T12:00:00") : null; });
+    items.forEach((e, idx) => { e.moment = e.iso ? new Date(e.iso + "T12:00:00") : null; e.idx = idx; });
     items.sort((a, b) => (a.iso || "9999").localeCompare(b.iso || "9999"));
     return items;
   }
 
   function render(data, live) {
+    DATA = data; LIVE = live;
     document.getElementById("live-indicator").textContent = live ? "· données en direct (Google Sheet)" : "· données figées du 03/10/2026";
     document.getElementById("live-indicator").className = "live " + (live ? "ok" : "ko");
 
@@ -208,6 +281,7 @@
       "J1 : " + (data.j1 ? fmt.format(new Date(data.j1 + "T12:00:00")) : "—") + " · Aujourd'hui : " + fmt.format(today);
 
     const items = normalize(data);
+    ITEMS = items;
 
     // ── Frise temporelle ──
     renderFrise(data, items);
@@ -261,6 +335,7 @@
         : (e.moment ? fmt.format(e.moment) : e.rawWhen || "Dès que possible");
       return `<li class="${cls}"><div class="when"><span class="num">${num}</span>${when}</div>
         <div class="what">${e.title}</div>${statusBadge(e.status)}
+        <button class="toggle" data-idx="${e.idx}">${isDone ? "↩ à faire" : "✓ fait"}</button>
         ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
     };
     document.getElementById("cycle").innerHTML = items.filter(e => e.group === "cycle").map(li).join("");
@@ -320,7 +395,7 @@
         const res = await fetch(SHEET_CSV_URL, { cache: "no-store" });
         if (!res.ok) throw new Error(res.status);
         const data = parseSheet(parseCsv(await res.text()));
-        if (data.j1 && data.cycle.length) return render(data, true);
+        if (data.j1 && data.cycle.length) { flushPending(); return render(data, true); }
         throw new Error("sheet incomplet");
       } catch (e) {
         console.warn("Lecture du sheet impossible, données figées :", e);
