@@ -236,6 +236,10 @@
   function setStatus(item, newStatus) {
     if (item.status === newStatus) return;
     item.status = newStatus;
+    // IMPORTANT : mettre à jour AUSSI la source (DATA), sinon le re-rendu repart de l'ancien statut
+    for (const src of [...(DATA ? DATA.cycle : []), ...(DATA ? DATA.pre : [])]) {
+      if (src.title === item.title) src.status = newStatus;
+    }
     render(DATA, LIVE); // re-rendu immédiat : le bouton du nouveau statut passe en vert
     const payload = { title: item.title, status: newStatus };
     if (APPS_SCRIPT_URL) {
@@ -355,7 +359,7 @@
     document.getElementById("footer").textContent =
       (live ? "Source : Google Sheet « Protocole FET » (publié en CSV) — rechargé à chaque visite."
             : "Source : Google Sheet « Protocole FET » — données du 03/10/2026.")
-      + " — version v9.";
+      + " — version v10.";
   }
 
   // ── Frise temporelle ──
@@ -418,6 +422,6 @@
   }
   main();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="0pVoh/BHHnghgLbIujcJfA==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="3tmCaqA9Lm+6AXv3Lky/MQ==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
