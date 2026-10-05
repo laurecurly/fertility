@@ -126,7 +126,6 @@
 
   <footer id="footer"></footer>
 </main>
-<div class="toast" id="toast">✓ Enregistré</div>
 
 <script>
   // ── Source des données ──────────────────────────────────
@@ -239,7 +238,10 @@
   }
 
   function setStatus(item, newStatus) {
-    if (item.status === newStatus) return;
+    if (item.status === newStatus) {
+      showToast("ℹ " + item.title + " est déjà « " + newStatus + " »");
+      return;
+    }
     item.status = newStatus;
     render(DATA, LIVE);
     showToast("✓ " + item.title + " → " + newStatus);
@@ -265,11 +267,18 @@
     toastTimer = setTimeout(() => { t.style.display = "none"; }, 1800);
   }
 
-  // Fonction globale appelée directement par chaque bouton — réaction immédiate au 1er clic/tap
-  window.__pickStatus = function (idx, s) {
-    const item = ITEMS[idx];
-    if (item) setStatus(item, STATUSES[s]);
-  };
+  // Écouteur global robuste : réagit au premier appui (souris ou tactile)
+  let lastHandled = 0;
+  function handleSeg(ev) {
+    const btn = ev.target.closest ? ev.target.closest(".seg button") : null;
+    if (!btn) return;
+    if (Date.now() - lastHandled < 500) return; // évite le déclenchement double
+    lastHandled = Date.now();
+    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
+    if (item) setStatus(item, STATUSES[parseInt(btn.dataset.s, 10)]);
+  }
+  document.addEventListener("pointerdown", handleSeg, { passive: true });
+  document.addEventListener("click", handleSeg, { passive: true });
 
   async function flushPending() {
     if (!APPS_SCRIPT_URL) return;
@@ -347,7 +356,7 @@
     };
     let cycNum = 0, preNum = 0;
     const segControl = (e) => `<span class="seg">` + STATUSES.map((s, i) =>
-      `<button type="button" onpointerdown="__pickStatus(${e.idx},${i})" onclick="return false" class="${e.status === s ? "active" : ""}">${s}</button>`
+      `<button type="button" data-idx="${e.idx}" data-s="${i}" class="${e.status === s ? "active" : ""}">${s}</button>`
     ).join("") + `</span>`;
     const li = (e) => {
       const isDone = e.status === "Fait";
@@ -427,6 +436,5 @@
   }
   main();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="z7+UwwXA+QZD7RBVatmA3A==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
