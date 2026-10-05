@@ -87,6 +87,10 @@
   .seg button:hover { background: #eee; }
   .seg button.active { background: var(--green); color: #fff; font-weight: 700; }
   .sync-warn { font-size: .7rem; font-weight: 600; color: #b45309; margin-top: 4px; display: none; }
+  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #000; color: #fff;
+    font-family: 'Space Grotesk', sans-serif; font-size: .78rem; font-weight: 700; padding: 10px 18px;
+    border: 2px solid #000; box-shadow: 4px 4px 0 var(--green); display: none; z-index: 99;
+    text-transform: uppercase; letter-spacing: .03em; }
   footer { font-size: .74rem; font-weight: 500; color: var(--muted); margin-top: 40px; border-top: 2px solid #000; padding-top: 10px; }
 </style>
 </head>
@@ -122,6 +126,7 @@
 
   <footer id="footer"></footer>
 </main>
+<div class="toast" id="toast">✓ Enregistré</div>
 
 <script>
   // ── Source des données ──────────────────────────────────
@@ -237,6 +242,7 @@
     if (item.status === newStatus) return;
     item.status = newStatus;
     render(DATA, LIVE);
+    showToast("✓ " + item.title + " → " + newStatus);
     const payload = { title: item.title, status: newStatus };
     if (APPS_SCRIPT_URL) {
       savePending(payload);
@@ -250,6 +256,15 @@
 
   const STATUSES = ["À venir", "À faire", "Fait"];
 
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.display = "block";
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.display = "none"; }, 1800);
+  }
+
   // Fonction globale appelée directement par chaque bouton — réaction immédiate au 1er clic/tap
   window.__pickStatus = function (idx, s) {
     const item = ITEMS[idx];
@@ -262,13 +277,6 @@
       try { await sendToSheet(p); clearPending(p); } catch { break; }
     }
   }
-
-  document.addEventListener("click", (ev) => {
-    const btn = ev.target.closest(".toggle");
-    if (!btn) return;
-    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
-    if (item) flipStatus(item);
-  });
 
   function normalize(data) {
     const items = [
@@ -339,7 +347,7 @@
     };
     let cycNum = 0, preNum = 0;
     const segControl = (e) => `<span class="seg">` + STATUSES.map((s, i) =>
-      `<button type="button" onpointerdown="__pickStatus(${e.idx},${i})" class="${e.status === s ? "active" : ""}">${s}</button>`
+      `<button type="button" onpointerdown="__pickStatus(${e.idx},${i})" onclick="return false" class="${e.status === s ? "active" : ""}">${s}</button>`
     ).join("") + `</span>`;
     const li = (e) => {
       const isDone = e.status === "Fait";
@@ -349,7 +357,7 @@
         ? (e.day ? "J" + e.day + " · " : "") + (e.moment ? fmt.format(e.moment) : "À confirmer")
         : (e.moment ? fmt.format(e.moment) : e.rawWhen || "Dès que possible");
       return `<li class="${cls}"><div class="when"><span class="num">${num}</span>${when}</div>
-        <div class="what">${e.title}</div>${statusBadge(e.status)}${segControl(e)}
+        <div class="what">${e.title}</div>${segControl(e)}
         ${e.detail ? `<div class="detail">${e.detail}</div>` : ""}</li>`;
     };
     document.getElementById("cycle").innerHTML = items.filter(e => e.group === "cycle").map(li).join("");
@@ -419,6 +427,6 @@
   }
   main();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="hzVwTVi5DzG3MhAshMbLaA==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="z7+UwwXA+QZD7RBVatmA3A==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
