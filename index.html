@@ -79,7 +79,8 @@
   .seg { display: inline-flex; gap: 0; margin-left: 10px; vertical-align: middle; }
   .seg button { font-family: 'Space Grotesk', sans-serif; font-size: .64rem; padding: 3px 9px;
     border: 1.5px solid #000; background: #fff; color: #000; cursor: pointer;
-    text-transform: uppercase; letter-spacing: .03em; font-weight: 500; }
+    text-transform: uppercase; letter-spacing: .03em; font-weight: 500;
+    touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent; }
   .seg button + button { border-left: none; }
   .seg button:first-child { border-radius: 3px 0 0 3px; }
   .seg button:last-child { border-radius: 0 3px 3px 0; }
@@ -248,14 +249,12 @@
   }
 
   const STATUSES = ["À venir", "À faire", "Fait"];
-  const slug = (s) => s.toLowerCase().replace(/\s+/g, "-").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-  document.addEventListener("click", (ev) => {
-    const btn = ev.target.closest(".seg button");
-    if (!btn) return;
-    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
-    if (item) setStatus(item, STATUSES[parseInt(btn.dataset.s, 10)]);
-  });
+  // Fonction globale appelée directement par chaque bouton — réaction immédiate au 1er clic/tap
+  window.__pickStatus = function (idx, s) {
+    const item = ITEMS[idx];
+    if (item) setStatus(item, STATUSES[s]);
+  };
 
   async function flushPending() {
     if (!APPS_SCRIPT_URL) return;
@@ -263,13 +262,6 @@
       try { await sendToSheet(p); clearPending(p); } catch { break; }
     }
   }
-
-  document.addEventListener("click", (ev) => {
-    const btn = ev.target.closest(".toggle");
-    if (!btn) return;
-    const item = ITEMS[parseInt(btn.dataset.idx, 10)];
-    if (item) flipStatus(item);
-  });
 
   function normalize(data) {
     const items = [
@@ -340,7 +332,7 @@
     };
     let cycNum = 0, preNum = 0;
     const segControl = (e) => `<span class="seg">` + STATUSES.map((s, i) =>
-      `<button data-idx="${e.idx}" data-s="${i}" class="${e.status === s ? "active p-" + slug(s) : ""}">${s}</button>`
+      `<button type="button" onpointerdown="__pickStatus(${e.idx},${i})" class="${e.status === s ? "active" : ""}">${s}</button>`
     ).join("") + `</span>`;
     const li = (e) => {
       const isDone = e.status === "Fait";
@@ -420,6 +412,6 @@
   }
   main();
 </script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="yGn96AA0z3UGqW1lIe6HRg==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="HTtUE1mmEudrxAMlrCaDOA==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
