@@ -87,10 +87,6 @@
   .seg button:hover { background: #eee; }
   .seg button.active { background: var(--green); color: #fff; font-weight: 700; }
   .sync-warn { font-size: .7rem; font-weight: 600; color: #b45309; margin-top: 4px; display: none; }
-  .toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: #000; color: #fff;
-    font-family: 'Space Grotesk', sans-serif; font-size: .78rem; font-weight: 700; padding: 10px 18px;
-    border: 2px solid #000; box-shadow: 4px 4px 0 var(--green); display: none; z-index: 99;
-    text-transform: uppercase; letter-spacing: .03em; }
   footer { font-size: .74rem; font-weight: 500; color: var(--muted); margin-top: 40px; border-top: 2px solid #000; padding-top: 10px; }
 </style>
 </head>
@@ -238,13 +234,9 @@
   }
 
   function setStatus(item, newStatus) {
-    if (item.status === newStatus) {
-      showToast("ℹ " + item.title + " est déjà « " + newStatus + " »");
-      return;
-    }
+    if (item.status === newStatus) return;
     item.status = newStatus;
-    render(DATA, LIVE);
-    showToast("✓ " + item.title + " → " + newStatus);
+    render(DATA, LIVE); // re-rendu immédiat : le bouton du nouveau statut passe en vert
     const payload = { title: item.title, status: newStatus };
     if (APPS_SCRIPT_URL) {
       savePending(payload);
@@ -257,15 +249,6 @@
   }
 
   const STATUSES = ["À venir", "À faire", "Fait"];
-
-  let toastTimer = null;
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.style.display = "block";
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { t.style.display = "none"; }, 1800);
-  }
 
   // Écouteur global robuste : réagit au premier appui (souris ou tactile)
   let lastHandled = 0;
