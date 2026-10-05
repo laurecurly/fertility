@@ -126,7 +126,7 @@
   // ── Source des données ──────────────────────────────────
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtuTGAxUF1LrASHyVpL1JkgClU4JGz5PwLRcCgwDQVmNpY8EN1QlMjTXeX1lA5NAlhgDQ1KRHSKT19/pub?gid=1190738777&single=true&output=csv";
   // URL de l'application web Apps Script (donnée à l'étape 2 des instructions) :
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdCD2MluGhP3W_3Di4Natkd7Kwjjqrdp8DIovfuW-fmDVhQg97vI2pKX1lrxW16oQsWw/exec";
+  const APPS_SCRIPT_URL = `https://script.google.com/macros/s/AKfycbzdCD2MluGhP3W_3Di4Natkd7Kwjjqrdp8DIovfuW-fmDVhQg97vI2pKX1lrxW16oQsWw/exec`.replace(/\s+/g, "");
 
   // ── Données de secours (dernier état du sheet au 03/10/2026) ──
   const FALLBACK = {
@@ -420,5 +420,6 @@
   }
   main();
 </script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" nonce="yGn96AA0z3UGqW1lIe6HRg==" data-cf-beacon='{"version":"2024.11.0","token":"36b4216ae2dc4d5488c249161e71fe1e","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
